@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package networkmanager_test
 
 import (
@@ -5,46 +8,47 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/networkmanager"
-	sdkacctest "github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	sdkacctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-provider-aws/internal/acctest"
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
 	tfnetworkmanager "github.com/hashicorp/terraform-provider-aws/internal/service/networkmanager"
 	"github.com/hashicorp/terraform-provider-aws/internal/tfresource"
+	"github.com/hashicorp/terraform-provider-aws/names"
 )
 
 func TestAccNetworkManagerDevice_basic(t *testing.T) {
+	ctx := acctest.Context(t)
 	resourceName := "aws_networkmanager_device.test"
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { acctest.PreCheck(t) },
-		ErrorCheck:        acctest.ErrorCheck(t, networkmanager.EndpointsID),
-		ProviderFactories: acctest.ProviderFactories,
-		CheckDestroy:      testAccCheckDeviceDestroy,
+		PreCheck:                 func() { acctest.PreCheck(ctx, t) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.NetworkManagerServiceID),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDeviceDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDeviceConfig(rName),
+				Config: testAccDeviceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
-					resource.TestCheckResourceAttrSet(resourceName, "arn"),
+					testAccCheckDeviceExists(ctx, resourceName),
+					resource.TestCheckResourceAttrSet(resourceName, names.AttrARN),
 					resource.TestCheckResourceAttr(resourceName, "aws_location.#", "0"),
-					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, names.AttrDescription, ""),
 					resource.TestCheckResourceAttr(resourceName, "location.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "model", ""),
 					resource.TestCheckResourceAttr(resourceName, "serial_number", ""),
 					resource.TestCheckResourceAttr(resourceName, "site_id", ""),
-					resource.TestCheckResourceAttr(resourceName, "tags.%", "0"),
-					resource.TestCheckResourceAttr(resourceName, "type", ""),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsPercent, "0"),
+					resource.TestCheckResourceAttr(resourceName, names.AttrType, ""),
 					resource.TestCheckResourceAttr(resourceName, "vendor", ""),
 				),
 			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
-				ImportStateIdFunc: testAccDeviceImportStateIdFunc(resourceName),
+				ImportStateIdFunc: acctest.AttrImportStateIdFunc(resourceName, names.AttrARN),
 				ImportStateVerify: true,
 			},
 		},
@@ -52,20 +56,21 @@ func TestAccNetworkManagerDevice_basic(t *testing.T) {
 }
 
 func TestAccNetworkManagerDevice_disappears(t *testing.T) {
+	ctx := acctest.Context(t)
 	resourceName := "aws_networkmanager_device.test"
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { acctest.PreCheck(t) },
-		ErrorCheck:        acctest.ErrorCheck(t, networkmanager.EndpointsID),
-		ProviderFactories: acctest.ProviderFactories,
-		CheckDestroy:      testAccCheckDeviceDestroy,
+		PreCheck:                 func() { acctest.PreCheck(ctx, t) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.NetworkManagerServiceID),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDeviceDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDeviceConfig(rName),
+				Config: testAccDeviceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
-					acctest.CheckResourceDisappears(acctest.Provider, tfnetworkmanager.ResourceDevice(), resourceName),
+					testAccCheckDeviceExists(ctx, resourceName),
+					acctest.CheckResourceDisappears(ctx, acctest.Provider, tfnetworkmanager.ResourceDevice(), resourceName),
 				),
 				ExpectNonEmptyPlan: true,
 			},
@@ -74,44 +79,45 @@ func TestAccNetworkManagerDevice_disappears(t *testing.T) {
 }
 
 func TestAccNetworkManagerDevice_tags(t *testing.T) {
+	ctx := acctest.Context(t)
 	resourceName := "aws_networkmanager_device.test"
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { acctest.PreCheck(t) },
-		ErrorCheck:        acctest.ErrorCheck(t, networkmanager.EndpointsID),
-		ProviderFactories: acctest.ProviderFactories,
-		CheckDestroy:      testAccCheckDeviceDestroy,
+		PreCheck:                 func() { acctest.PreCheck(ctx, t) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.NetworkManagerServiceID),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDeviceDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDeviceConfigTags1(rName, "key1", "value1"),
+				Config: testAccDeviceConfig_tags1(rName, acctest.CtKey1, acctest.CtValue1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "tags.%", "1"),
-					resource.TestCheckResourceAttr(resourceName, "tags.key1", "value1"),
+					testAccCheckDeviceExists(ctx, resourceName),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsPercent, "1"),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsKey1, acctest.CtValue1),
 				),
 			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
-				ImportStateIdFunc: testAccDeviceImportStateIdFunc(resourceName),
+				ImportStateIdFunc: acctest.AttrImportStateIdFunc(resourceName, names.AttrARN),
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccDeviceConfigTags2(rName, "key1", "value1updated", "key2", "value2"),
+				Config: testAccDeviceConfig_tags2(rName, acctest.CtKey1, acctest.CtValue1Updated, acctest.CtKey2, acctest.CtValue2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "tags.%", "2"),
-					resource.TestCheckResourceAttr(resourceName, "tags.key1", "value1updated"),
-					resource.TestCheckResourceAttr(resourceName, "tags.key2", "value2"),
+					testAccCheckDeviceExists(ctx, resourceName),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsPercent, "2"),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsKey1, acctest.CtValue1Updated),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsKey2, acctest.CtValue2),
 				),
 			},
 			{
-				Config: testAccDeviceConfigTags1(rName, "key2", "value2"),
+				Config: testAccDeviceConfig_tags1(rName, acctest.CtKey2, acctest.CtValue2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "tags.%", "1"),
-					resource.TestCheckResourceAttr(resourceName, "tags.key2", "value2"),
+					testAccCheckDeviceExists(ctx, resourceName),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsPercent, "1"),
+					resource.TestCheckResourceAttr(resourceName, acctest.CtTagsKey2, acctest.CtValue2),
 				),
 			},
 		},
@@ -119,52 +125,53 @@ func TestAccNetworkManagerDevice_tags(t *testing.T) {
 }
 
 func TestAccNetworkManagerDevice_allAttributes(t *testing.T) {
+	ctx := acctest.Context(t)
 	resourceName := "aws_networkmanager_device.test"
 	site1ResourceName := "aws_networkmanager_site.test1"
 	site2ResourceName := "aws_networkmanager_site.test2"
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { acctest.PreCheck(t) },
-		ErrorCheck:        acctest.ErrorCheck(t, networkmanager.EndpointsID),
-		ProviderFactories: acctest.ProviderFactories,
-		CheckDestroy:      testAccCheckDeviceDestroy,
+		PreCheck:                 func() { acctest.PreCheck(ctx, t) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.NetworkManagerServiceID),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDeviceDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDeviceAllAttributesConfig(rName),
+				Config: testAccDeviceConfig_allAttributes(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "description", "description1"),
+					testAccCheckDeviceExists(ctx, resourceName),
+					resource.TestCheckResourceAttr(resourceName, names.AttrDescription, "description1"),
 					resource.TestCheckResourceAttr(resourceName, "location.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "location.0.address", "Address 1"),
 					resource.TestCheckResourceAttr(resourceName, "location.0.latitude", "1.1"),
 					resource.TestCheckResourceAttr(resourceName, "location.0.longitude", "-1.1"),
 					resource.TestCheckResourceAttr(resourceName, "model", "model1"),
 					resource.TestCheckResourceAttr(resourceName, "serial_number", "sn1"),
-					resource.TestCheckResourceAttrPair(resourceName, "site_id", site1ResourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "type", "type1"),
+					resource.TestCheckResourceAttrPair(resourceName, "site_id", site1ResourceName, names.AttrID),
+					resource.TestCheckResourceAttr(resourceName, names.AttrType, "type1"),
 					resource.TestCheckResourceAttr(resourceName, "vendor", "vendor1"),
 				),
 			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
-				ImportStateIdFunc: testAccDeviceImportStateIdFunc(resourceName),
+				ImportStateIdFunc: acctest.AttrImportStateIdFunc(resourceName, names.AttrARN),
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccDeviceAllAttributesUpdatedConfig(rName),
+				Config: testAccDeviceConfig_allAttributesUpdated(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "description", "description2"),
+					testAccCheckDeviceExists(ctx, resourceName),
+					resource.TestCheckResourceAttr(resourceName, names.AttrDescription, "description2"),
 					resource.TestCheckResourceAttr(resourceName, "location.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "location.0.address", "Address 2"),
 					resource.TestCheckResourceAttr(resourceName, "location.0.latitude", "22"),
 					resource.TestCheckResourceAttr(resourceName, "location.0.longitude", "-22"),
 					resource.TestCheckResourceAttr(resourceName, "model", "model2"),
 					resource.TestCheckResourceAttr(resourceName, "serial_number", "sn2"),
-					resource.TestCheckResourceAttrPair(resourceName, "site_id", site2ResourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "type", "type2"),
+					resource.TestCheckResourceAttrPair(resourceName, "site_id", site2ResourceName, names.AttrID),
+					resource.TestCheckResourceAttr(resourceName, names.AttrType, "type2"),
 					resource.TestCheckResourceAttr(resourceName, "vendor", "vendor2"),
 				),
 			},
@@ -172,70 +179,73 @@ func TestAccNetworkManagerDevice_allAttributes(t *testing.T) {
 	})
 }
 
-func TestAccNetworkManagerDevice_awsLocation(t *testing.T) { // nosemgrep:aws-in-func-name
+func TestAccNetworkManagerDevice_awsLocation(t *testing.T) { // nosemgrep:ci.aws-in-func-name
+	ctx := acctest.Context(t)
 	resourceName := "aws_networkmanager_device.test"
 	subnetResourceName := "aws_subnet.test"
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { acctest.PreCheck(t) },
-		ErrorCheck:        acctest.ErrorCheck(t, networkmanager.EndpointsID),
-		ProviderFactories: acctest.ProviderFactories,
-		CheckDestroy:      testAccCheckDeviceDestroy,
+		PreCheck:                 func() { acctest.PreCheck(ctx, t) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.NetworkManagerServiceID),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDeviceDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDeviceConfig_awsLocation(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
+					testAccCheckDeviceExists(ctx, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "aws_location.#", "1"),
-					resource.TestCheckResourceAttrPair(resourceName, "aws_location.0.subnet_arn", subnetResourceName, "arn"),
+					resource.TestCheckResourceAttrPair(resourceName, "aws_location.0.subnet_arn", subnetResourceName, names.AttrARN),
 					resource.TestCheckResourceAttr(resourceName, "aws_location.0.zone", ""),
 				),
 			},
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
-				ImportStateIdFunc: testAccDeviceImportStateIdFunc(resourceName),
+				ImportStateIdFunc: acctest.AttrImportStateIdFunc(resourceName, names.AttrARN),
 				ImportStateVerify: true,
 			},
 			{
 				Config: testAccDeviceConfig_awsLocationUpdated(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckDeviceExists(resourceName),
+					testAccCheckDeviceExists(ctx, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "aws_location.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "aws_location.0.subnet_arn", ""),
-					resource.TestCheckResourceAttrPair(resourceName, "aws_location.0.zone", subnetResourceName, "availability_zone"),
+					resource.TestCheckResourceAttrPair(resourceName, "aws_location.0.zone", subnetResourceName, names.AttrAvailabilityZone),
 				),
 			},
 		},
 	})
 }
 
-func testAccCheckDeviceDestroy(s *terraform.State) error {
-	conn := acctest.Provider.Meta().(*conns.AWSClient).NetworkManagerConn
+func testAccCheckDeviceDestroy(ctx context.Context) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		conn := acctest.Provider.Meta().(*conns.AWSClient).NetworkManagerClient(ctx)
 
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "aws_networkmanager_device" {
-			continue
+		for _, rs := range s.RootModule().Resources {
+			if rs.Type != "aws_networkmanager_device" {
+				continue
+			}
+
+			_, err := tfnetworkmanager.FindDeviceByTwoPartKey(ctx, conn, rs.Primary.Attributes["global_network_id"], rs.Primary.ID)
+
+			if tfresource.NotFound(err) {
+				continue
+			}
+
+			if err != nil {
+				return err
+			}
+
+			return fmt.Errorf("Network Manager Device %s still exists", rs.Primary.ID)
 		}
 
-		_, err := tfnetworkmanager.FindDeviceByTwoPartKey(context.TODO(), conn, rs.Primary.Attributes["global_network_id"], rs.Primary.ID)
-
-		if tfresource.NotFound(err) {
-			continue
-		}
-
-		if err != nil {
-			return err
-		}
-
-		return fmt.Errorf("Network Manager Device %s still exists", rs.Primary.ID)
+		return nil
 	}
-
-	return nil
 }
 
-func testAccCheckDeviceExists(n string) resource.TestCheckFunc {
+func testAccCheckDeviceExists(ctx context.Context, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -246,19 +256,15 @@ func testAccCheckDeviceExists(n string) resource.TestCheckFunc {
 			return fmt.Errorf("No Network Manager Device ID is set")
 		}
 
-		conn := acctest.Provider.Meta().(*conns.AWSClient).NetworkManagerConn
+		conn := acctest.Provider.Meta().(*conns.AWSClient).NetworkManagerClient(ctx)
 
-		_, err := tfnetworkmanager.FindDeviceByTwoPartKey(context.TODO(), conn, rs.Primary.Attributes["global_network_id"], rs.Primary.ID)
+		_, err := tfnetworkmanager.FindDeviceByTwoPartKey(ctx, conn, rs.Primary.Attributes["global_network_id"], rs.Primary.ID)
 
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	}
 }
 
-func testAccDeviceConfig(rName string) string {
+func testAccDeviceConfig_basic(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_networkmanager_global_network" "test" {
   tags = {
@@ -272,7 +278,7 @@ resource "aws_networkmanager_device" "test" {
 `, rName)
 }
 
-func testAccDeviceConfigTags1(rName, tagKey1, tagValue1 string) string {
+func testAccDeviceConfig_tags1(rName, tagKey1, tagValue1 string) string {
 	return fmt.Sprintf(`
 resource "aws_networkmanager_global_network" "test" {
   tags = {
@@ -290,7 +296,7 @@ resource "aws_networkmanager_device" "test" {
 `, rName, tagKey1, tagValue1)
 }
 
-func testAccDeviceConfigTags2(rName, tagKey1, tagValue1, tagKey2, tagValue2 string) string {
+func testAccDeviceConfig_tags2(rName, tagKey1, tagValue1, tagKey2, tagValue2 string) string {
 	return fmt.Sprintf(`
 resource "aws_networkmanager_global_network" "test" {
   tags = {
@@ -309,7 +315,7 @@ resource "aws_networkmanager_device" "test" {
 `, rName, tagKey1, tagValue1, tagKey2, tagValue2)
 }
 
-func testAccDeviceAllAttributesConfig(rName string) string {
+func testAccDeviceConfig_allAttributes(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_networkmanager_global_network" "test" {
   tags = {
@@ -356,7 +362,7 @@ resource "aws_networkmanager_device" "test" {
 `, rName)
 }
 
-func testAccDeviceAllAttributesUpdatedConfig(rName string) string {
+func testAccDeviceConfig_allAttributesUpdated(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_networkmanager_global_network" "test" {
   tags = {
@@ -443,7 +449,7 @@ resource "aws_networkmanager_device" "test" {
 `, rName))
 }
 
-func testAccDeviceConfig_awsLocationUpdated(rName string) string { // nosemgrep:aws-in-func-name
+func testAccDeviceConfig_awsLocationUpdated(rName string) string { // nosemgrep:ci.aws-in-func-name
 	return acctest.ConfigCompose(acctest.ConfigAvailableAZsNoOptInDefaultExclude(), fmt.Sprintf(`
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
@@ -481,15 +487,4 @@ resource "aws_networkmanager_device" "test" {
   }
 }
 `, rName))
-}
-
-func testAccDeviceImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
-	return func(s *terraform.State) (string, error) {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return "", fmt.Errorf("Not found: %s", resourceName)
-		}
-
-		return rs.Primary.Attributes["arn"], nil
-	}
 }
