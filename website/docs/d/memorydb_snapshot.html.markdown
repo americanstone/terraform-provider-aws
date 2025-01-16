@@ -1,5 +1,5 @@
 ---
-subcategory: "MemoryDB for Redis"
+subcategory: "MemoryDB"
 layout: "aws"
 page_title: "AWS: aws_memorydb_snapshot"
 description: |-
@@ -24,15 +24,16 @@ The following arguments are required:
 
 * `name` - (Required) Name of the snapshot.
 
-## Attributes Reference
+## Attribute Reference
 
-In addition, the following attributes are exported:
+This data source exports the following attributes in addition to the arguments above:
 
-* `id` - The name of the snapshot.
-* `arn` - The ARN of the snapshot.
+* `id` - Name of the snapshot.
+* `arn` - ARN of the snapshot.
 * `cluster_configuration` - The configuration of the cluster from which the snapshot was taken.
     * `description` - Description for the cluster.
-    * `engine_version` - Version number of the Redis engine used by the cluster.
+    * `engine` - The engine that will run on cluster nodes.
+    * `engine_version` - Version number of the engine used by the cluster.
     * `maintenance_window` - The weekly time range during which maintenance on the cluster is performed.
     * `name` - Name of the cluster.
     * `node_type` - Compute and memory capacity of the nodes in the cluster.
@@ -46,5 +47,5 @@ In addition, the following attributes are exported:
     * `vpc_id` - The VPC in which the cluster exists.
 * `cluster_name` - Name of the MemoryDB cluster that this snapshot was taken from.
 * `kms_key_arn` - ARN of the KMS key used to encrypt the snapshot at rest.
-* `source` - Indicates whether the snapshot is from an automatic backup (`automated`) or was created manually (`manual`).
-* `tags` - A map of tags assigned to the snapshot.
+* `source` - Whether the snapshot is from an automatic backup (`automated`) or was created manually (`manual`).
+* `tags` - Map of tags assigned to the snapshot.

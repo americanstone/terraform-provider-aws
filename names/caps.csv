@@ -93,6 +93,7 @@ Rds,RDS
 Rfc,RFC
 Sagemaker,SageMaker
 Sasl,SASL
+Sdk,SDK
 Sfn,SFN
 Smb,SMB
 Sms,SMS
@@ -117,7 +118,6 @@ Vpc,VPC
 Vpn,VPN
 Waf,WAF
 Wafv2,WAFV2
-Workgroup,WorkGroup
 Worklink,WorkLink
 Workspaces,WorkSpaces
 Xray,XRay
